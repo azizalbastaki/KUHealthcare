@@ -54,8 +54,13 @@ extension AdminDashboardView {
                 Text("Emergency: \(emergency.title)")
                     .font(.headline)
                 
-                TextField("New Status (e.g., pending, completed)", text: $newStatus)
-                    .textFieldStyle(.roundedBorder)
+                Picker("New Status", selection: $newStatus) {
+                    Text("Pending").tag("pending")
+                    Text("Approved").tag("approved")
+                    Text("Rejected").tag("rejected")
+                }
+                .pickerStyle(.segmented)
+                .padding()
                 
                 Button("Submit Update") {
                     setEmergencyStatus(for: emergency.id)

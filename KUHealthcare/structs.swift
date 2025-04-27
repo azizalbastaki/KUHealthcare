@@ -21,6 +21,20 @@ struct MedicalStaff: Identifiable, Codable {
     let specialization: String
 }
 
+struct MedicalStaffScheduling: Identifiable, Codable {
+    var id: String
+    var firstName: String
+    var lastName: String
+    var email: String
+    var role: String
+    var specialization: String
+    var schedule: [String: Bool] // day name -> true/false
+
+    var fullName: String {
+        "\(firstName) \(lastName)"
+    }
+}
+
 struct LoggedInPatient: Identifiable, Codable {
     let id: String
     let first_name: String

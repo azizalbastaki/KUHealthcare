@@ -2,12 +2,13 @@ import SwiftUI
 
 struct AdminDashboardView: View {
     enum AdminTab {
-        case userManagement, emergencyDispatch
+        case userManagement, emergencyDispatch, staffScheduling
     }
     
     @State var selectedTab: AdminTab = .userManagement
     @State var patients: [Patient] = []
     @State var staff: [MedicalStaff] = []
+    @State var staffScheduling: [MedicalStaffScheduling] = []
     @State var emergencies: [EmergencyRequest] = []
     @State var selectedEmergency: EmergencyRequest?
     @State var newStatus: String = ""
@@ -26,6 +27,7 @@ struct AdminDashboardView: View {
                     .padding(.top)
                 
                 sidebarItem(icon: "person.3.fill", label: "User Management", tab: .userManagement)
+                sidebarItem(icon: "calendar.badge.clock", label: "Staff Scheduling", tab: .staffScheduling)
                 sidebarItem(icon: "cross.case.fill", label: "Emergency Dispatch", tab: .emergencyDispatch)
                 
                 Spacer()
@@ -45,6 +47,8 @@ struct AdminDashboardView: View {
                     userManagementContent()
                 case .emergencyDispatch:
                     emergencyDispatchContent()
+                case .staffScheduling:
+                    StaffSchedulingView(staff: $staffScheduling)
                 }
             }
             .padding()
@@ -62,6 +66,7 @@ struct AdminDashboardView: View {
         .onAppear {
             fetchPatients()
             fetchStaff()
+            fetchStaffScheduling()
             fetchEmergencies()
         }
         .frame(minWidth: 900, minHeight: 600)
@@ -148,6 +153,20 @@ extension AdminDashboardView {
                 if let data = data {
                     if let decoded = try? JSONDecoder().decode([EmergencyRequest].self, from: data) {
                         self.emergencies = decoded
+                    }
+                }
+            }
+        }.resume()
+    }
+    
+    func fetchStaffScheduling() {
+        guard let url = URL(string: "https://salemalkaabi.pythonanywhere.com/all_staff") else { return }
+        
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            DispatchQueue.main.async {
+                if let data = data {
+                    if let decoded = try? JSONDecoder().decode([MedicalStaffScheduling].self, from: data) {
+                        self.staffScheduling = decoded
                     }
                 }
             }
