@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StaffSchedulingView: View {
-    @Binding var staff: [MedicalStaffScheduling]
+    @Binding var staff: [MedicalStaff]
 
     @State private var selectedDay: String = "Monday"
     @State private var selectedStaffEmail: String = ""
@@ -42,21 +42,7 @@ struct StaffSchedulingView: View {
                         .padding(.horizontal)
 
                         ForEach(staffAssigned(to: day)) { staff in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text("\(staff.firstName) \(staff.lastName)")
-                                        .font(.headline)
-                                    Text("\(staff.role) – \(staff.specialization)")
-                                        .font(.subheadline)
-                                        //.foregroundColor(.white)
-                                }
-                                Spacer()
-                                Button("Unassign") {
-                                    unassignStaffFromDay(email: staff.email, day: day)
-                                }
-                                .foregroundColor(.red)
-                            }
-                            .padding(.horizontal)
+                            StaffRowView(staff: staff, day: day, unassignAction: unassignStaffFromDay)
                         }
                     }
                     .padding(.vertical)
@@ -71,7 +57,7 @@ struct StaffSchedulingView: View {
                 } else {
                     Picker("Select Staff", selection: $selectedStaffEmail) {
                         ForEach(staff, id: \.email) { member in
-                            Text("\(member.firstName) \(member.lastName)").tag(member.email)
+                            Text("\(member.first_name) \(member.last_name)").tag(member.email)
                         }
                     }
                     .pickerStyle(.wheel)
@@ -100,8 +86,31 @@ struct StaffSchedulingView: View {
             }
         }
     }
+    
+    struct StaffRowView: View {
+        let staff: MedicalStaff
+        let day: String
+        let unassignAction: (String, String) -> Void
 
-    func staffAssigned(to day: String) -> [MedicalStaffScheduling] {
+        var body: some View {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text("\(staff.first_name) \(staff.last_name)")
+                        .font(.headline)
+                    Text("\(staff.role) – \(staff.specialization)")
+                        .font(.subheadline)
+                }
+                Spacer()
+                Button("Unassign") {
+                    unassignAction(staff.email, day)
+                }
+                .foregroundColor(.red)
+            }
+            .padding(.horizontal)
+        }
+    }
+
+    func staffAssigned(to day: String) -> [MedicalStaff] {
         staff.filter { $0.schedule[day] == true }
     }
 
@@ -139,7 +148,7 @@ struct StaffSchedulingView: View {
         URLSession.shared.dataTask(with: url) { data, _, _ in
             DispatchQueue.main.async {
                 if let data = data {
-                    if let decoded = try? JSONDecoder().decode([MedicalStaffScheduling].self, from: data) {
+                    if let decoded = try? JSONDecoder().decode([MedicalStaff].self, from: data) {
                         self.staff = decoded
                     }
                 }

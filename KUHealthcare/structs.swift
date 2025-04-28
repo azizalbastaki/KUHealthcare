@@ -19,6 +19,21 @@ struct MedicalStaff: Identifiable, Codable {
     let department: String
     let role: String
     let specialization: String
+    var schedule: [String: Bool]
+    
+    var fullName: String {
+        "\(first_name) \(last_name)"
+    }
+    enum CodingKeys: String, CodingKey {
+        case id
+        case first_name = "first_name"
+        case last_name = "last_name"
+        case email
+        case department   
+        case role
+        case specialization
+        case schedule
+    }
 }
 
 struct MedicalStaffScheduling: Identifiable, Codable {

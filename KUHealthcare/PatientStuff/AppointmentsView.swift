@@ -27,6 +27,13 @@ struct PatientAppointmentsView: View {
     
     @State private var staffList: [MedicalStaff] = []
     @State private var selectedStaffId: String = ""
+    
+    var filteredStaffList: [MedicalStaff] {
+        let selectedDay = weekdayFromDate(appointmentDate).capitalized
+        return staffList.filter { staff in
+            staff.schedule[selectedDay] ?? false
+        }
+    }
 
     var body: some View {
         VStack(spacing: 20) {
@@ -108,14 +115,24 @@ struct PatientAppointmentsView: View {
                 TextField("Reason", text: $appointmentReason)
                     .textFieldStyle(.roundedBorder)
                 
-                Picker("Select Staff", selection: $selectedStaffId) {
-                    ForEach(staffList) { staff in
-                        Text("\(staff.first_name) \(staff.last_name) - \(staff.specialization)").tag(staff.id)                    }
+                if filteredStaffList.isEmpty {
+                    Text("No available staff for the selected date.")
+                        .foregroundColor(.secondary)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color(.systemGray5))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    Picker("Select Staff", selection: $selectedStaffId) {
+                        ForEach(filteredStaffList) { staff in
+                            Text("\(staff.first_name) \(staff.last_name) - \(staff.specialization)").tag(staff.id)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .padding()
+                    //.background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-                .pickerStyle(.menu)
-                .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
                 
                 TextField("Type (Consultation, Test, etc.)", text: $appointmentType)
                     .textFieldStyle(.roundedBorder)
@@ -124,9 +141,10 @@ struct PatientAppointmentsView: View {
                     submitAppointment()
                     showAddAppointmentForm = false
                 }
+                .disabled(filteredStaffList.isEmpty) // <--- NEW
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(.green)
+                .background(filteredStaffList.isEmpty ? Color.gray : Color.green)
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
@@ -350,6 +368,12 @@ struct PatientAppointmentsView: View {
                 }
             }
         }.resume()
+    }
+    
+    func weekdayFromDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE" // Full day name like "Monday"
+        return formatter.string(from: date)
     }
     
 }
