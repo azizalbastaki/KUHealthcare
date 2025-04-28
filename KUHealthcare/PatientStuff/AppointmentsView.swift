@@ -111,7 +111,9 @@ struct PatientAppointmentsView: View {
                 Text("New Appointment")
                     .font(.title2)
                     .fontWeight(.bold)
-                
+                if (((message?.isEmpty) == false)) {
+                    Text(message!)
+                }
                 DatePicker("Date", selection: $appointmentDate, displayedComponents: .date)
                 
                 Picker("Select Time", selection: $appointmentHour) {
@@ -154,7 +156,7 @@ struct PatientAppointmentsView: View {
                 
                 Button("Submit Appointment") {
                     submitAppointment()
-                    showAddAppointmentForm = false
+                    //showAddAppointmentForm = false
                 }
                 .disabled(filteredStaffList.isEmpty) // <--- NEW
                 .padding()
@@ -303,43 +305,56 @@ struct PatientAppointmentsView: View {
             message = "⚠️ Please fill in all fields."
             return
         }
+
         let timeString = String(format: "%02d:00", appointmentHour)
 
-        var components = URLComponents(string: "https://salemalkaabi.pythonanywhere.com/add_appointment")!
-        components.queryItems = [
-            .init(name: "patient_id", value: patient.id),
-            .init(name: "staff_id", value: selectedStaffId),
-            .init(name: "date", value: dateString),
-            .init(name: "time", value: timeString),
-            .init(name: "reason", value: appointmentReason),
-            .init(name: "appointment_type", value: appointmentType)
-        ]
-
-        guard let url = components.url else {
+        guard let url = URL(string: "https://salemalkaabi.pythonanywhere.com/add_appointment") else {
             message = "⚠️ Could not create request"
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let body: [String: Any] = [
+            "patient_id": patient.id,
+            "staff_id": selectedStaffId,
+            "date": dateString,
+            "time": timeString,
+            "reason": appointmentReason,
+            "appointment_type": appointmentType
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let data = data,
-                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let responseMessage = json["message"] as? String {
-                    message = "✅ \(responseMessage)"
-                    appointmentReason = ""
-                    appointmentType = ""
-                    loadAppointments() // Refresh appointments after adding
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    
+                    if let responseMessage = json["message"] as? String {
+                        message = "✅ \(responseMessage)"
+                        appointmentReason = ""
+                        appointmentType = ""
+                        loadAppointments()
+                    } else if let errorMessage = json["error"] as? String {
+                        message = "⚠️ \(errorMessage)"
+                    } else {
+                        message = "❌ Unexpected server response."
+                    }
+                    
                 } else {
                     message = "❌ Failed to submit appointment"
                 }
             }
         }.resume()
-        
+
         appointmentReason = ""
         appointmentType = ""
         selectedStaffId = ""
     }
-    
     func loadAppointments() {
         guard let url = URL(string: "https://salemalkaabi.pythonanywhere.com/patient_appointments?patient_id=\(patient.id)") else {
             return
