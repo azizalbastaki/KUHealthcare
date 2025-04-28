@@ -27,7 +27,7 @@ extension AdminDashboardView {
                                         .font(.headline)
                                     Text(patient.email)
                                         .font(.subheadline)
-                                        .foregroundColor(.secondary)
+                                        //.foregroundColor(.secondary)
                                 }
                                 .padding()
                                 .background(.thinMaterial)
@@ -65,7 +65,7 @@ extension AdminDashboardView {
                                         .foregroundColor(.secondary)
                                     Text("\(member.department) | \(member.specialization)")
                                         .font(.footnote)
-                                        .foregroundColor(.gray)
+                                        //.foregroundColor(.gray)
                                 }
                                 .padding()
                                 .background(.thinMaterial)

@@ -48,13 +48,13 @@ struct StaffSchedulingView: View {
                                         .font(.headline)
                                     Text("\(staff.role) – \(staff.specialization)")
                                         .font(.subheadline)
-                                        .foregroundColor(.gray)
+                                        //.foregroundColor(.white)
                                 }
                                 Spacer()
-                                Button("Edit") {
-                                    // Optional: future editing like unassign
+                                Button("Unassign") {
+                                    unassignStaffFromDay(email: staff.email, day: day)
                                 }
-                                .foregroundColor(.blue)
+                                .foregroundColor(.red)
                             }
                             .padding(.horizontal)
                         }
@@ -65,27 +65,39 @@ struct StaffSchedulingView: View {
         }
         .sheet(isPresented: $showAddSheet) {
             VStack {
-                Picker("Select Staff", selection: $selectedStaffEmail) {
-                    ForEach(staff, id: \.email) { member in
-                        Text("\(member.firstName) \(member.lastName)").tag(member.email)
+                if staff.isEmpty {
+                    ProgressView("Loading staff...")
+                        .padding()
+                } else {
+                    Picker("Select Staff", selection: $selectedStaffEmail) {
+                        ForEach(staff, id: \.email) { member in
+                            Text("\(member.firstName) \(member.lastName)").tag(member.email)
+                        }
                     }
-                }
-                .pickerStyle(.wheel)
-                .padding()
+                    .pickerStyle(.wheel)
+                    .padding()
 
-                Button("Assign to \(selectedDay)") {
-                    assignStaffToDay(email: selectedStaffEmail, day: selectedDay)
-                    showAddSheet = false
-                }
-                .buttonStyle(.borderedProminent)
-                .padding()
+                    Button("Assign to \(selectedDay)") {
+                        if !selectedStaffEmail.isEmpty {
+                            assignStaffToDay(email: selectedStaffEmail, day: selectedDay)
+                        }
+                        showAddSheet = false
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding()
 
-                Button("Cancel") {
-                    showAddSheet = false
+                    Button("Cancel") {
+                        showAddSheet = false
+                    }
+                    .padding()
                 }
-                .padding()
             }
             .presentationDetents([.fraction(0.4)])
+            .onAppear {
+                if let first = staff.first {
+                    selectedStaffEmail = first.email
+                }
+            }
         }
     }
 
@@ -102,6 +114,20 @@ struct StaffSchedulingView: View {
             if error == nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     // Very simple: Refresh the staff after assignment
+                    fetchUpdatedStaff()
+                }
+            }
+        }.resume()
+    }
+    
+    func unassignStaffFromDay(email: String, day: String) {
+        guard let encodedEmail = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let encodedDay = day.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "https://salemalkaabi.pythonanywhere.com/assign_staff_day?email=\(encodedEmail)&day=\(encodedDay)&is_available=false") else { return }
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if error == nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     fetchUpdatedStaff()
                 }
             }

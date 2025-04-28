@@ -15,6 +15,18 @@ struct PatientAppointmentsView: View {
     @Binding var emergencyUrgency: String
     @Binding var message: String?
     @Binding var showEmergencyForm: Bool
+    
+    @State private var appointments: [Appointment] = []
+    @State private var showAddAppointmentForm = false
+
+    // New appointment form fields
+    @State private var appointmentDate = Date()
+    @State private var appointmentTime = ""
+    @State private var appointmentReason = ""
+    @State private var appointmentType = ""
+    
+    @State private var staffList: [MedicalStaff] = []
+    @State private var selectedStaffId: String = ""
 
     var body: some View {
         VStack(spacing: 20) {
@@ -31,12 +43,130 @@ struct PatientAppointmentsView: View {
                 .background(.blue)
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                
+                Button("New Appointment") {
+                    showAddAppointmentForm = true
+                }
+                .padding()
+                .background(.green)
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding()
             }
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Upcoming Appointments")
+                        .font(.headline)
+
+                    ForEach(upcomingAppointments) { appointment in
+                        AppointmentRow(appointment: appointment)
+                    }
+                    
+                    Divider().padding(.vertical)
+                    
+                    Text("Past Appointments")
+                        .font(.headline)
+
+                    ForEach(pastAppointments) { appointment in
+                        AppointmentRow(appointment: appointment)
+                    }
+                }
+                .padding()
+            }
+            
             Spacer()
         }
         .sheet(isPresented: $showEmergencyForm) {
             emergencyForm
+        }
+        .sheet(isPresented: $showAddAppointmentForm) {
+            addAppointmentForm
+        }
+        .onAppear {
+            loadAppointments()
+            loadStaff()
+
+        }
+        .sheet(isPresented: $showEmergencyForm) {
+            emergencyForm
+        }
+    }
+    
+    var addAppointmentForm: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Text("New Appointment")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                DatePicker("Date", selection: $appointmentDate, displayedComponents: .date)
+                
+                TextField("Time (HH:MM)", text: $appointmentTime)
+                    .textFieldStyle(.roundedBorder)
+
+                TextField("Reason", text: $appointmentReason)
+                    .textFieldStyle(.roundedBorder)
+                
+                Picker("Select Staff", selection: $selectedStaffId) {
+                    ForEach(staffList) { staff in
+                        Text("\(staff.first_name) \(staff.last_name) - \(staff.specialization)").tag(staff.id)                    }
+                }
+                .pickerStyle(.menu)
+                .padding()
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                
+                TextField("Type (Consultation, Test, etc.)", text: $appointmentType)
+                    .textFieldStyle(.roundedBorder)
+                
+                Button("Submit Appointment") {
+                    submitAppointment()
+                    showAddAppointmentForm = false
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.green)
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                Button("Cancel") {
+                    showAddAppointmentForm = false
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.gray)
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                if let msg = message {
+                    Text(msg)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding()
+            .navigationTitle("Add Appointment")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    struct AppointmentRow: View {
+        let appointment: Appointment
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("\(appointment.appointment_type): \(appointment.reason)")
+                    .font(.headline)
+                Text("Date: \(appointment.date) at \(appointment.time)")
+                    .font(.subheadline)
+                Text("Status: \(appointment.status)")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
 
@@ -123,4 +253,103 @@ struct PatientAppointmentsView: View {
             }
         }.resume()
     }
+    
+    func submitAppointment() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let dateString = formatter.string(from: appointmentDate)
+
+        guard !appointmentTime.isEmpty,
+              !appointmentReason.isEmpty,
+              !appointmentType.isEmpty else {
+            message = "⚠️ Please fill in all fields."
+            return
+        }
+
+        var components = URLComponents(string: "https://salemalkaabi.pythonanywhere.com/add_appointment")!
+        components.queryItems = [
+            .init(name: "patient_id", value: patient.id),
+            .init(name: "staff_id", value: selectedStaffId),
+            .init(name: "date", value: dateString),
+            .init(name: "time", value: appointmentTime),
+            .init(name: "reason", value: appointmentReason),
+            .init(name: "appointment_type", value: appointmentType)
+        ]
+
+        guard let url = components.url else {
+            message = "⚠️ Could not create request"
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            DispatchQueue.main.async {
+                if let data = data,
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let responseMessage = json["message"] as? String {
+                    message = "✅ \(responseMessage)"
+                    appointmentTime = ""
+                    appointmentReason = ""
+                    appointmentType = ""
+                    loadAppointments() // Refresh appointments after adding
+                } else {
+                    message = "❌ Failed to submit appointment"
+                }
+            }
+        }.resume()
+        
+        appointmentTime = ""
+        appointmentReason = ""
+        appointmentType = ""
+        selectedStaffId = ""
+    }
+    
+    func loadAppointments() {
+        guard let url = URL(string: "https://salemalkaabi.pythonanywhere.com/patient_appointments?patient_id=\(patient.id)") else {
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            if let data = data,
+               let decoded = try? JSONDecoder().decode([Appointment].self, from: data) {
+                DispatchQueue.main.async {
+                    self.appointments = decoded
+                }
+            }
+        }.resume()
+    }
+    var upcomingAppointments: [Appointment] {
+        appointments.filter { appointment in
+            guard let appointmentDate = appointmentDateOnly(appointment.date) else { return false }
+            return appointmentDate >= Date()
+        }
+    }
+
+    var pastAppointments: [Appointment] {
+        appointments.filter { appointment in
+            guard let appointmentDate = appointmentDateOnly(appointment.date) else { return false }
+            return appointmentDate < Date()
+        }
+    }
+
+    func appointmentDateOnly(_ dateString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: dateString)
+    }
+    
+    func loadStaff() {
+        guard let url = URL(string: "https://salemalkaabi.pythonanywhere.com/all_staff") else {
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            if let data = data,
+               let decoded = try? JSONDecoder().decode([MedicalStaff].self, from: data) {
+                DispatchQueue.main.async {
+                    self.staffList = decoded
+                }
+            }
+        }.resume()
+    }
+    
 }

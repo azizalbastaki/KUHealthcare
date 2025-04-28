@@ -28,10 +28,20 @@ struct MedicalStaffScheduling: Identifiable, Codable {
     var email: String
     var role: String
     var specialization: String
-    var schedule: [String: Bool] // day name -> true/false
+    var schedule: [String: Bool]
 
     var fullName: String {
         "\(firstName) \(lastName)"
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case firstName = "first_name"
+        case lastName = "last_name"
+        case email
+        case role
+        case specialization
+        case schedule
     }
 }
 
@@ -88,3 +98,14 @@ struct EmergencyRequest: Identifiable, Codable {
     var status: String
 }
 
+
+struct Appointment: Identifiable, Codable {
+    let id: String
+    let staff_id: String
+    let date: String
+    let time: String
+    let reason: String
+    let appointment_type: String
+    let status: String
+    
+}
