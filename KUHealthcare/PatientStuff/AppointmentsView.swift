@@ -21,12 +21,16 @@ struct PatientAppointmentsView: View {
 
     // New appointment form fields
     @State private var appointmentDate = Date()
-    @State private var appointmentTime = ""
+    @State private var appointmentHour: Int = 7 // default to 7 AM
     @State private var appointmentReason = ""
     @State private var appointmentType = ""
     
     @State private var staffList: [MedicalStaff] = []
     @State private var selectedStaffId: String = ""
+    
+    var availableHours: [Int] {
+        Array(7...19)
+    }
     
     var filteredStaffList: [MedicalStaff] {
         let selectedDay = weekdayFromDate(appointmentDate).capitalized
@@ -102,6 +106,7 @@ struct PatientAppointmentsView: View {
     
     var addAppointmentForm: some View {
         NavigationView {
+            ScrollView {
             VStack(spacing: 20) {
                 Text("New Appointment")
                     .font(.title2)
@@ -109,12 +114,18 @@ struct PatientAppointmentsView: View {
                 
                 DatePicker("Date", selection: $appointmentDate, displayedComponents: .date)
                 
-                TextField("Time (HH:MM)", text: $appointmentTime)
-                    .textFieldStyle(.roundedBorder)
-
-                TextField("Reason", text: $appointmentReason)
-                    .textFieldStyle(.roundedBorder)
+                Picker("Select Time", selection: $appointmentHour) {
+                    ForEach(availableHours, id: \.self) { hour in
+                        Text(formatHour(hour)).tag(hour)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .padding()
+                .frame(height: 100)
+                //.background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
                 
+              
                 if filteredStaffList.isEmpty {
                     Text("No available staff for the selected date.")
                         .foregroundColor(.secondary)
@@ -137,6 +148,10 @@ struct PatientAppointmentsView: View {
                 TextField("Type (Consultation, Test, etc.)", text: $appointmentType)
                     .textFieldStyle(.roundedBorder)
                 
+                TextField("Description", text: $appointmentReason)
+                    .textFieldStyle(.roundedBorder)
+                
+                
                 Button("Submit Appointment") {
                     submitAppointment()
                     showAddAppointmentForm = false
@@ -147,7 +162,7 @@ struct PatientAppointmentsView: View {
                 .background(filteredStaffList.isEmpty ? Color.gray : Color.green)
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-
+                
                 Button("Cancel") {
                     showAddAppointmentForm = false
                 }
@@ -156,7 +171,7 @@ struct PatientAppointmentsView: View {
                 .background(.gray)
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-
+                
                 if let msg = message {
                     Text(msg)
                         .font(.footnote)
@@ -166,7 +181,13 @@ struct PatientAppointmentsView: View {
             .padding()
             .navigationTitle("Add Appointment")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if !availableHours.contains(appointmentHour) {
+                    appointmentHour = availableHours.first ?? 7
+                }
+            }
         }
+    }
     }
     
     struct AppointmentRow: View {
@@ -277,19 +298,19 @@ struct PatientAppointmentsView: View {
         formatter.dateFormat = "yyyy-MM-dd"
         let dateString = formatter.string(from: appointmentDate)
 
-        guard !appointmentTime.isEmpty,
-              !appointmentReason.isEmpty,
+        guard !appointmentReason.isEmpty,
               !appointmentType.isEmpty else {
             message = "⚠️ Please fill in all fields."
             return
         }
+        let timeString = String(format: "%02d:00", appointmentHour)
 
         var components = URLComponents(string: "https://salemalkaabi.pythonanywhere.com/add_appointment")!
         components.queryItems = [
             .init(name: "patient_id", value: patient.id),
             .init(name: "staff_id", value: selectedStaffId),
             .init(name: "date", value: dateString),
-            .init(name: "time", value: appointmentTime),
+            .init(name: "time", value: timeString),
             .init(name: "reason", value: appointmentReason),
             .init(name: "appointment_type", value: appointmentType)
         ]
@@ -305,7 +326,6 @@ struct PatientAppointmentsView: View {
                    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let responseMessage = json["message"] as? String {
                     message = "✅ \(responseMessage)"
-                    appointmentTime = ""
                     appointmentReason = ""
                     appointmentType = ""
                     loadAppointments() // Refresh appointments after adding
@@ -315,7 +335,6 @@ struct PatientAppointmentsView: View {
             }
         }.resume()
         
-        appointmentTime = ""
         appointmentReason = ""
         appointmentType = ""
         selectedStaffId = ""
@@ -374,6 +393,31 @@ struct PatientAppointmentsView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE" // Full day name like "Monday"
         return formatter.string(from: date)
+    }
+    
+    func convertTo24HourFormat(_ timeString: String) -> String {
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "h a" // Input: "1 PM", "2 PM", etc.
+        
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "HH:mm" // Output: "13:00", "14:00"
+        
+        if let date = inputFormatter.date(from: timeString) {
+            return outputFormatter.string(from: date)
+        } else {
+            return ""
+        }
+    }
+    func formatHour(_ hour: Int) -> String {
+        if hour == 12 {
+            return "12 PM"
+        } else if hour == 0 {
+            return "12 AM"
+        } else if hour > 12 {
+            return "\(hour - 12) PM"
+        } else {
+            return "\(hour) AM"
+        }
     }
     
 }
