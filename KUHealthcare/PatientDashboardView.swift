@@ -5,10 +5,7 @@ struct PatientDashboardView: View {
     @Environment(\.dismiss) var dismiss
 
     enum Tab {
-        case appointments
-        case profile
-        case medicalHistory
-        case prescriptions   
+        case appointments, profile, medicalHistory, prescriptions, billing
     }
 
     @State private var selectedTab: Tab = .appointments
@@ -32,6 +29,7 @@ struct PatientDashboardView: View {
                 sidebarItem("Appointments", icon: "cross.case.fill", tab: .appointments)
                 sidebarItem("Medical History", icon: "doc.text.fill", tab: .medicalHistory)
                 sidebarItem("Prescriptions", icon: "pills.fill", tab: .prescriptions)
+                sidebarItem("Billing", icon: "creditcard.fill", tab: .billing)
                 sidebarItem("Profile", icon: "person.fill", tab: .profile)
 
                 Spacer()
@@ -57,7 +55,9 @@ struct PatientDashboardView: View {
                 case .medicalHistory:
                     PatientMedicalHistoryView(patient: patient)
                 case .prescriptions:
-                    PatientPrescriptionsView(patient: patient)  // ✅ NEW VIEW
+                    PatientPrescriptionsView(patient: patient)  
+                case .billing:
+                    PatientBillingView(patient: patient)
                 }
             }
             .padding()
