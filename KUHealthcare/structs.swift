@@ -154,3 +154,12 @@ struct Consumable: Identifiable, Codable {
     let quantity: Int
     let status: String
 }
+
+struct Prescription: Identifiable, Codable {
+    let id: String
+    let patient_id: String
+    let staff_id: String
+    let medication_name: String
+    let dosage: String
+    let instructions: String
+}
