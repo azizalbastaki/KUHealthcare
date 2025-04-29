@@ -93,50 +93,49 @@ struct LoginView: View {
             userType = .admin
             return
         }
-        
-   
-            guard let encodedEmail = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                  let encodedPassword = password.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                  let url = URL(string: "https://salemalkaabi.pythonanywhere.com/login?email=\(encodedEmail)&password=\(encodedPassword)") else {
-                errorMessage = "Invalid login URL"
-                return
-            }
-            
-            print("[DEBUG] Sending request to:", url.absoluteString)
-            
-            URLSession.shared.dataTask(with: url) { data, _, _ in
-                DispatchQueue.main.async {
-                    guard let data = data else {
-                        errorMessage = "No response from server"
-                        return
-                    }
-                    
-                    let responseString = String(data: data, encoding: .utf8) ?? "N/A"
-                    print("[DEBUG] Raw response string:", responseString)
-                    
-                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                        if let _ = json["patient"] {
-                            if let decoded = try? JSONDecoder().decode(PatientResponse.self, from: data) {
-                                self.userType = .patient(decoded.patient)
-                            } else {
-                                errorMessage = "⚠️ Could not decode patient"
-                            }
-                        } else if let _ = json["staff"] {
-                            if let decoded = try? JSONDecoder().decode(StaffResponse.self, from: data) {
-                                self.userType = .staff(decoded.staff)
-                            } else {
-                                errorMessage = "⚠️ Could not decode staff"
-                            }
-                        } else if let err = json["error"] as? String {
-                            errorMessage = err
-                        } else {
-                            errorMessage = "⚠️ Unknown response from server"
-                        }
-                    } else {
-                        errorMessage = "⚠️ Failed to parse server response"
-                    }
-                }
-            }.resume()
+
+        guard let encodedEmail = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let encodedPassword = password.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "https://salemalkaabi.pythonanywhere.com/login?email=\(encodedEmail)&password=\(encodedPassword)") else {
+            errorMessage = "Invalid login URL"
+            return
         }
+        
+        print("[DEBUG] Sending request to:", url.absoluteString)
+        
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            DispatchQueue.main.async {
+                guard let data = data else {
+                    errorMessage = "No response from server"
+                    return
+                }
+                
+                let responseString = String(data: data, encoding: .utf8) ?? "N/A"
+                print("[DEBUG] Raw response string:", responseString)
+                
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if json["patient"] != nil {
+                        if let decoded = try? JSONDecoder().decode(PatientResponse.self, from: data) {
+                            self.userType = .patient(decoded.patient)
+                        } else {
+                            errorMessage = "⚠️ Could not decode patient"
+                        }
+                    } else if json["staff"] != nil {
+                        if let decoded = try? JSONDecoder().decode(StaffResponse.self, from: data) {
+                            self.userType = .staff(decoded.staff)
+                        } else {
+                            errorMessage = "⚠️ Could not decode staff"
+                        }
+                    } else if let err = json["error"] as? String {
+                        errorMessage = err
+                    } else {
+                        errorMessage = "⚠️ Unknown response from server"
+                    }
+                } else {
+                    errorMessage = "⚠️ Failed to parse server response"
+                }
+            }
+        }.resume()
+    }
     
 }

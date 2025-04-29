@@ -1,61 +1,71 @@
-//
-//  StaffDashboardView.swift
-//  KUHealthcare
-//
-//  Created by Abdulaziz Albastaki on 22/04/2025.
-//
-
 import SwiftUI
 
 struct StaffDashboardView: View {
     let staff: LoggedInStaff
     @Environment(\.dismiss) var dismiss
 
-    @State private var selectedTab: Int = 0
+    enum Tab {
+        case schedule
+        case profile
+    }
+
+    @State private var selectedTab: Tab = .schedule
 
     var body: some View {
-        VStack {
-            Picker("Tabs", selection: $selectedTab) {
-                Text("Schedule").tag(0)
-                Text("Profile").tag(1)
+        HStack(spacing: 0) {
+            // Sidebar
+            VStack(alignment: .leading, spacing: 24) {
+                Text("Welcome, \(staff.first_name)")
+                    .font(.headline)
+                    .padding(.top)
+
+                sidebarItem("Schedule", icon: "calendar", tab: .schedule)
+                sidebarItem("Profile", icon: "person.fill", tab: .profile)
+
+                Spacer()
             }
-            .pickerStyle(.segmented)
-            .padding()
+            .padding(24)
+            .frame(width: 220)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
 
-            if selectedTab == 0 {
-                scheduleTab
-            } else {
-                profileTab
-            }
-        }
-        .padding()
-    }
+            Divider()
 
-    var scheduleTab: some View {
-        VStack {
-            Text("Schedule view coming soon.")
-                .foregroundColor(.secondary)
-            Spacer()
-        }
-    }
-
-    var profileTab: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Name: \(staff.first_name) \(staff.last_name)")
-            Text("Email: \(staff.email)")
-            Text("Department: \(staff.department)")
-            Text("Role: \(staff.role)")
-            Text("Specialization: \(staff.specialization)")
-
-            Spacer()
-
-            Button("Log Out") {
-                dismiss()
+            // Main content
+            VStack {
+                switch selectedTab {
+                case .schedule:
+                    StaffScheduleView(staff: staff)   // 👈 Redirect here
+                case .profile:
+                    StaffProfileView(staff: staff, dismiss: dismiss)   // 👈 Redirect here
+                }
             }
             .padding()
-            .background(.red)
-            .foregroundColor(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .padding()
+        }
+        .frame(minWidth: 900, minHeight: 600)
+    }
+
+    @ViewBuilder
+    func sidebarItem(_ label: String, icon: String, tab: Tab) -> some View {
+        let isSelected = selectedTab == tab
+
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .frame(width: 24)
+            Text(label)
+                .font(.body)
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .background(isSelected ? Color.blue.opacity(0.15) : Color.clear)
+        .foregroundColor(isSelected ? .blue : .primary)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .onTapGesture {
+            selectedTab = tab
         }
     }
 }
