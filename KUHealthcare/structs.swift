@@ -113,14 +113,14 @@ struct EmergencyRequest: Identifiable, Codable {
     var status: String
 }
 
-
 struct Appointment: Identifiable, Codable {
     let id: String
+    let patient_id: String
     let staff_id: String
     let date: String
     let time: String
     let reason: String
     let appointment_type: String
     let status: String
-    
+    let patient_name: String?   // <--- Add this as optional
 }

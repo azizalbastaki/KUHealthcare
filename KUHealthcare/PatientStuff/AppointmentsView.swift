@@ -357,18 +357,37 @@ struct PatientAppointmentsView: View {
     }
     func loadAppointments() {
         guard let url = URL(string: "https://salemalkaabi.pythonanywhere.com/patient_appointments?patient_id=\(patient.id)") else {
+            print("❌ Invalid URL for loading appointments")
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            if let data = data,
-               let decoded = try? JSONDecoder().decode([Appointment].self, from: data) {
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("❌ Error loading appointments:", error.localizedDescription)
+                return
+            }
+
+            guard let data = data else {
+                print("❌ No data received for appointments")
+                return
+            }
+
+            do {
+                let decoded = try JSONDecoder().decode([Appointment].self, from: data)
                 DispatchQueue.main.async {
                     self.appointments = decoded
+                    print("✅ Successfully loaded appointments:", decoded.count)
+                }
+            } catch {
+                print("❌ Failed to decode appointments:", error.localizedDescription)
+                if let raw = String(data: data, encoding: .utf8) {
+                    print("📄 Raw server response:")
+                    print(raw)
                 }
             }
         }.resume()
     }
+    
     var upcomingAppointments: [Appointment] {
         appointments.filter { appointment in
             guard let appointmentDate = appointmentDateOnly(appointment.date) else { return false }
