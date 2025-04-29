@@ -6,6 +6,7 @@ struct StaffDashboardView: View {
 
     enum Tab {
         case schedule
+        case patients
         case profile
     }
 
@@ -20,6 +21,7 @@ struct StaffDashboardView: View {
                     .padding(.top)
 
                 sidebarItem("Schedule", icon: "calendar", tab: .schedule)
+                sidebarItem("Patients", icon: "person.2.fill", tab: .patients)
                 sidebarItem("Profile", icon: "person.fill", tab: .profile)
 
                 Spacer()
@@ -35,9 +37,11 @@ struct StaffDashboardView: View {
             VStack {
                 switch selectedTab {
                 case .schedule:
-                    StaffScheduleView(staff: staff)   // 👈 Redirect here
+                    StaffScheduleView(staff: staff)
+                case .patients:
+                    StaffPatientsView(staff: staff)  
                 case .profile:
-                    StaffProfileView(staff: staff, dismiss: dismiss)   // 👈 Redirect here
+                    StaffProfileView(staff: staff, dismiss: dismiss)
                 }
             }
             .padding()
