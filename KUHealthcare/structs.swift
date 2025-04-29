@@ -124,3 +124,12 @@ struct Appointment: Identifiable, Codable {
     let status: String
     let patient_name: String?   // <--- Add this as optional
 }
+
+struct MedicalRecord: Identifiable, Codable {
+    let id: String
+    let patient_id: String
+    let staff_id: String
+    let title: String
+    let description: String
+    let staff_name: String?  // ✅ Add this
+}

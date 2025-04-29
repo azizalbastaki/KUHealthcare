@@ -7,6 +7,7 @@ struct PatientDashboardView: View {
     enum Tab {
         case appointments
         case profile
+        case medicalHistory   // ✅ NEW
     }
 
     @State private var selectedTab: Tab = .appointments
@@ -28,6 +29,7 @@ struct PatientDashboardView: View {
                     .padding(.top)
 
                 sidebarItem("Appointments", icon: "cross.case.fill", tab: .appointments)
+                sidebarItem("Medical History", icon: "doc.text.fill", tab: .medicalHistory)
                 sidebarItem("Profile", icon: "person.fill", tab: .profile)
 
                 Spacer()
@@ -43,13 +45,15 @@ struct PatientDashboardView: View {
                 switch selectedTab {
                 case .appointments:
                     PatientAppointmentsView(patient: patient,
-                                            emergencyTitle: $emergencyTitle,
-                                            emergencyLocation: $emergencyLocation,
-                                            emergencyUrgency: $emergencyUrgency,
-                                            message: $message,
-                                            showEmergencyForm: $showEmergencyForm)
+                                             emergencyTitle: $emergencyTitle,
+                                             emergencyLocation: $emergencyLocation,
+                                             emergencyUrgency: $emergencyUrgency,
+                                             message: $message,
+                                             showEmergencyForm: $showEmergencyForm)
                 case .profile:
                     PatientProfileView(patient: patient, dismiss: dismiss)
+                case .medicalHistory:
+                    PatientMedicalHistoryView(patient: patient)  // ✅ NEW view
                 }
             }
             .padding()
