@@ -133,3 +133,24 @@ struct MedicalRecord: Identifiable, Codable {
     let description: String
     let staff_name: String?  // ✅ Add this
 }
+
+struct Medication: Identifiable, Codable {
+    let id: String
+    let name: String
+    let quantity: Int
+    let expiration_date: String
+    let status: String
+}
+
+struct Equipment: Identifiable, Codable {
+    let id: String
+    let name: String
+    let maintenance_due_date: String
+}
+
+struct Consumable: Identifiable, Codable {
+    let id: String
+    let name: String
+    let quantity: Int
+    let status: String
+}
