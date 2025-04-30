@@ -67,11 +67,7 @@ struct LoggedInPatient: Identifiable, Codable {
     let email: String
     let gender: String
     let date_of_birth: String
-}
-extension LoggedInPatient {
-    var insuranceProvider: String? {
-        return nil  // 🧹 Always nil unless you extend the login response later.
-    }
+    let insurance_provider: String?
 }
 
 struct LoggedInStaff: Identifiable, Codable {
@@ -167,4 +163,13 @@ struct Prescription: Identifiable, Codable {
     let medication_name: String
     let dosage: String
     let instructions: String
+}
+
+struct BillingReport: Identifiable, Codable {
+    let id: String
+    let patient_id: String
+    let appointment_id: String
+    let payment_type: String
+    let date_paid: String
+    let cost: Int 
 }

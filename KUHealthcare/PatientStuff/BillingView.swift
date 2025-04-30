@@ -44,14 +44,14 @@ struct PatientBillingView: View {
                         .padding(.top)
                     
                     HStack(spacing: 16) {
-                        Button("Pay by Cash") {
-                            settlePayments(method: "cash")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        
                         if let insurance = patientInsuranceProvider(), !insurance.isEmpty {
                             Button("Pay by \(insurance)") {
-                                settlePayments(method: "insurance")
+                                settlePayments(method: "Insurance")
+                            }
+                            .buttonStyle(.borderedProminent)
+                        } else {
+                            Button("Pay by Cash") {
+                                settlePayments(method: "Cash")
                             }
                             .buttonStyle(.borderedProminent)
                         }
@@ -131,7 +131,7 @@ struct PatientBillingView: View {
     }
     
     func patientInsuranceProvider() -> String? {
-        return nil  // 🔵 This can be updated later if your login returns insurance.
+        return patient.insurance_provider
     }
 }
 

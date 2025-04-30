@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AdminDashboardView: View {
     enum AdminTab {
-        case userManagement, emergencyDispatch, staffScheduling, resourceManagement
+        case userManagement, emergencyDispatch, staffScheduling, resourceManagement, billingReports
     }
     
     @State var selectedTab: AdminTab = .userManagement
@@ -29,6 +29,7 @@ struct AdminDashboardView: View {
                 sidebarItem(icon: "person.3.fill", label: "User Management", tab: .userManagement)
                 sidebarItem(icon: "calendar.badge.clock", label: "Staff Scheduling", tab: .staffScheduling)
                 sidebarItem(icon: "shippingbox.fill", label: "Resource Management", tab: .resourceManagement)
+                sidebarItem(icon: "doc.plaintext.fill", label: "Billing Reports", tab: .billingReports)
                 sidebarItem(icon: "cross.case.fill", label: "Emergency Dispatch", tab: .emergencyDispatch)
                 
                 Spacer()
@@ -52,6 +53,8 @@ struct AdminDashboardView: View {
                     StaffSchedulingView(staff: $staffScheduling)
                 case .resourceManagement:
                     AdminResourceManagementView()
+                case .billingReports:
+                    AdminBillingReportsView() 
                 }
             }
             .padding()
