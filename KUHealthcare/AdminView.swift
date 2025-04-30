@@ -18,6 +18,8 @@ struct AdminDashboardView: View {
     @State var isLoadingStaff = true
     @State var isLoadingEmergencies = true
     @State var message: String?
+    @State private var showForecastSheet = false
+    @State private var predictedAmbulanceCount: Int?
     
     var body: some View {
         HStack(spacing: 0) {
@@ -48,7 +50,15 @@ struct AdminDashboardView: View {
                 case .userManagement:
                     userManagementContent()
                 case .emergencyDispatch:
-                    emergencyDispatchContent()
+                    EmergencyDispatchView(
+                        emergencies: $emergencies,
+                        selectedEmergency: $selectedEmergency,
+                        newStatus: $newStatus,
+                        showStatusSheet: $showStatusSheet,
+                        showForecastSheet: $showForecastSheet,
+                        isLoadingEmergencies: $isLoadingEmergencies,
+                        message: $message
+                    )
                 case .staffScheduling:
                     StaffSchedulingView(staff: $staffScheduling)
                 case .resourceManagement:
@@ -69,6 +79,7 @@ struct AdminDashboardView: View {
         .sheet(item: $selectedEmergency) { emergency in
             updateStatusSheet(for: emergency)
         }
+        
         .onAppear {
             fetchPatients()
             fetchStaff()
@@ -177,6 +188,56 @@ extension AdminDashboardView {
                 }
             }
         }.resume()
+    }
+    
+    @ViewBuilder
+    func updateStatusSheet(for emergency: EmergencyRequest) -> some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Text("Update Status")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+
+                Text("Emergency: \(emergency.title)")
+                    .font(.headline)
+
+                Picker("New Status", selection: $newStatus) {
+                    Text("Pending").tag("pending")
+                    Text("Approved").tag("approved")
+                    Text("Rejected").tag("rejected")
+                }
+                .pickerStyle(.segmented)
+                .padding()
+
+                Button("Submit Update") {
+                    setEmergencyStatus(for: emergency.id)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.blue)
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                Button("Cancel") {
+                    selectedEmergency = nil
+                    showStatusSheet = false
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.gray)
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                if let msg = message {
+                    Text(msg)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding()
+            .navigationTitle("Edit Status")
+            .navigationBarTitleDisplayMode(.inline)
+        }
     }
     
     func setEmergencyStatus(for id: String) {

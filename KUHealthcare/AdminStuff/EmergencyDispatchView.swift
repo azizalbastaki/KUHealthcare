@@ -1,14 +1,21 @@
 import SwiftUI
+import CoreML
 
-extension AdminDashboardView {
+struct EmergencyDispatchView: View {
+    @Binding var emergencies: [EmergencyRequest]
+    @Binding var selectedEmergency: EmergencyRequest?
+    @Binding var newStatus: String
+    @Binding var showStatusSheet: Bool
+    @Binding var showForecastSheet: Bool
+    @Binding var isLoadingEmergencies: Bool
+    @Binding var message: String?
     
-    @ViewBuilder
-    func emergencyDispatchContent() -> some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             Text("Emergency Dispatch")
                 .font(.title)
                 .fontWeight(.bold)
-            
+
             if isLoadingEmergencies {
                 ProgressView("Loading emergencies...")
             } else if emergencies.isEmpty {
@@ -22,9 +29,7 @@ extension AdminDashboardView {
                                 Text(emergency.title)
                                     .font(.headline)
                                 Text("Urgency: \(emergency.urgency)")
-                                    .font(.subheadline)
                                 Text("Location: \(emergency.location)")
-                                    .font(.subheadline)
                                 Text("Status: \(emergency.status)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
@@ -41,55 +46,70 @@ extension AdminDashboardView {
                     .padding()
                 }
             }
-        }
-    }
-    
-    func updateStatusSheet(for emergency: EmergencyRequest) -> some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                Text("Update Status")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                
-                Text("Emergency: \(emergency.title)")
-                    .font(.headline)
-                
-                Picker("New Status", selection: $newStatus) {
-                    Text("Pending").tag("pending")
-                    Text("Approved").tag("approved")
-                    Text("Rejected").tag("rejected")
-                }
-                .pickerStyle(.segmented)
-                .padding()
-                
-                Button("Submit Update") {
-                    setEmergencyStatus(for: emergency.id)
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(.blue)
-                .foregroundColor(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                
-                Button("Cancel") {
-                    selectedEmergency = nil
-                    showStatusSheet = false
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(.gray)
-                .foregroundColor(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                
-                if let msg = message {
-                    Text(msg)
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
+
+            Button("Predict Ambulance Demand") {
+                showForecastSheet = true
             }
-            .padding()
-            .navigationTitle("Edit Status")
-            .navigationBarTitleDisplayMode(.inline)
+            .buttonStyle(.borderedProminent)
+            
+        }
+        .padding()
+    }
+}
+
+struct AmbulanceForecastView: View {
+    @Environment(\.dismiss) var dismiss
+
+    @State private var isMarathon = false
+    @State private var isHoliday = false
+    @State private var isFestival = false
+    @State private var isWeekend = false
+    @State private var isSportsEvent = false
+    @State private var temperature: Double = 30.0
+
+    @State private var prediction: Int?
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Event Conditions")) {
+                    Toggle("Marathon", isOn: $isMarathon)
+                    Toggle("Holiday", isOn: $isHoliday)
+                    Toggle("Festival", isOn: $isFestival)
+                    Toggle("Weekend", isOn: $isWeekend)
+                    Toggle("Sports Event", isOn: $isSportsEvent)
+                }
+
+                Section(header: Text("Weather")) {
+                    HStack {
+                        Text("Temperature")
+                        Spacer()
+                        Text("\(Int(temperature))°C")
+                    }
+                    Slider(value: $temperature, in: 15...50, step: 1)
+                }
+
+                Section {
+                    Button("Predict Ambulances") {
+                        prediction = 4  // 🔧 Hardcoded for now
+                    }
+                }
+
+                if let result = prediction {
+                    Section(header: Text("Forecast")) {
+                        Text("Recommended Ambulances: \(result)")
+                            .font(.title)
+                            .bold()
+                            .foregroundColor(.blue)
+                    }
+                }
+
+                Button("Close") {
+                    dismiss()
+                }
+                .foregroundColor(.red)
+            }
+            .navigationTitle("Forecast Ambulance Need")
         }
     }
 }
