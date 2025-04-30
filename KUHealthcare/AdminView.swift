@@ -21,6 +21,8 @@ struct AdminDashboardView: View {
     @State private var showForecastSheet = false
     @State private var predictedAmbulanceCount: Int?
     
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 24) {

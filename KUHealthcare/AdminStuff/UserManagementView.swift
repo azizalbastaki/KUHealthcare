@@ -78,6 +78,14 @@ extension AdminDashboardView {
                 }
             }
         }
+        Button("Log Out") {
+            dismiss()
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Color.red)
+        .foregroundColor(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
